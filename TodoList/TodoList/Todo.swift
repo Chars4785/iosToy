@@ -10,6 +10,7 @@ import UIKit
 
 
 // TODO: Codable과 Equatable 추가
+// Codable 을 통해서 json 을 변경 시켜준다. swift 에서 이용하기 쉽게 하기 위해서
 struct Todo: Codable, Equatable {
     let id: Int
     var isDone: Bool
@@ -18,18 +19,21 @@ struct Todo: Codable, Equatable {
     
     mutating func update(isDone: Bool, detail: String, isToday: Bool) {
         // TODO: update 로직 추가
-        
+        self.isDone = isDone
+        self.detail = detail
+        self.isToday = isToday
     }
     
     static func == (lhs: Self, rhs: Self) -> Bool {
         // TODO: 동등 조건 추가
-        return true
+        return lhs.id == rhs.id
+//        return true
     }
 }
 
 class TodoManager {
     
-    static let shared = TodoManager()
+    static let shared = TodoManager() // 싱글톤
     
     static var lastId: Int = 0
     
@@ -37,21 +41,35 @@ class TodoManager {
     
     func createTodo(detail: String, isToday: Bool) -> Todo {
         //TODO: create로직 추가
-        return Todo(id: 1, isDone: false, detail: "2", isToday: true)
+        
+        let nextId = TodoManager.lastId + 1
+        TodoManager.lastId = nextId
+        return Todo(id: nextId, isDone: false, detail: detail, isToday: isToday)
     }
     
     func addTodo(_ todo: Todo) {
         //TODO: add로직 추가
+        todos.append(todo)
+        saveTodo()
     }
     
     func deleteTodo(_ todo: Todo) {
         //TODO: delete 로직 추가
         
+//        todos = todos.filter{  existingTodo in
+//            return existingTodo.id != todo.id
+//        }
+        
+        if let index = todos.firstIndex(of: todo ){
+            todos.remove(at: index)
+        }
     }
     
     func updateTodo(_ todo: Todo) {
         //TODO: updatee 로직 추가
-        
+        guard let index = todos.firstIndex(of: todo) else { return }
+        todos[index].update(isDone: todo.isDone, detail: todo.detail, isToday: todo.isToday)
+        saveTodo()
     }
     
     func saveTodo() {
