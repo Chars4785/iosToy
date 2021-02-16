@@ -25,7 +25,9 @@ class TodoListViewController: UIViewController {
         super.viewDidLoad()
         
         // TODO: 키보드 디텍션
-        
+        NotificationCenter.default.addObserver(self, selector: #selector(adjustInputView), name: UIResponder.keyboardWillShowNotification, object: nil)
+            
+        NotificationCenter.default.addObserver(self, selector: #selector(adjustInputView), name: UIResponder.keyboardWillHideNotification, object: nil)
         
         // TODO: 데이터 불러오기
         todoListViewModel.loadTasks()
@@ -50,8 +52,17 @@ class TodoListViewController: UIViewController {
         // TODO: Todo 태스크 추가
         // add task to view model
         // and tableview reload or update
+        guard let detail = inputTextField.text, detail.isEmpty == false else { return }
+        let todo = TodoManager.shared.createTodo(detail: detail, isToday: isTodayButton.isSelected)
+        todoListViewModel.addTodo(todo)
+        collectionView.reloadData()
+        inputTextField.text = ""
+        isTodayButton.isSelected = false
     }
     
+    @IBAction func tapBG(_ sender: Any) {
+        inputTextField.resignFirstResponder()
+    }
     // TODO: BG 탭했을때, 키보드 내려오게 하기
 }
 
@@ -59,7 +70,14 @@ extension TodoListViewController {
     @objc private func adjustInputView(noti: Notification) {
         guard let userInfo = noti.userInfo else { return }
         // TODO: 키보드 높이에 따른 인풋뷰 위치 변경
+        guard let keyboardFram = (userInfo[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue)?.cgRectValue else { return }
         
+        if noti.name == UIResponder.keyboardWillShowNotification {
+            let adjectmentHight = keyboardFram.height - view.safeAreaInsets.bottom
+            inputViewBottom.constant = adjectmentHight
+        } else {
+            inputViewBottom.constant = 0
+        }
     }
 }
 
@@ -93,6 +111,16 @@ extension TodoListViewController: UICollectionViewDataSource {
         // TODO: todo 를 이용해서 updateUI
         // TODO: doneButtonHandler 작성
         // TODO: deleteButtonHandler 작성
+        
+        cell.doneButtonTapHandler = { isDone in
+            todo.isDone = isDone
+            self.todoListViewModel.updateTodo(todo)
+            self.collectionView.reloadData() //새로운 뷰가 보여야 하기 때문에
+        }
+        cell.deleteButtonTapHandler = {
+            self.todoListViewModel.deleteTodo(todo)
+            self.collectionView.reloadData()
+        }
         return cell
     }
     
